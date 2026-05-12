@@ -1,0 +1,5 @@
+python manage.py makemigrations
+python manage.py migrate
+python manage.py runserver
+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
+groq
