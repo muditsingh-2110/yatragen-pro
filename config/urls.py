@@ -11,5 +11,5 @@ urlpatterns = [
     path('history/', views.history_view, name='history'),
     path('delete-trip/<int:trip_id>/', views.delete_trip, name='delete_trip'),
     # Ye naya route hai AI se chat karne ke liye
-    path('refine/', views.refine_itinerary, name='refine_itinerary'),
-]
+    path('refine_itinerary/', views.refine_itinerary, name='refine_itinerary'),
+] 
