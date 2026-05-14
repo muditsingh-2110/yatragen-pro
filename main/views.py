@@ -50,6 +50,8 @@ def clean_ai_response(raw_text):
 def home(request):
     itinerary, weather = "", ""
     if request.method == "POST":
+        source = request.POST.get('source')           # Ye line add kar
+        start_date = request.POST.get('start_date')
         dest = request.POST.get('destination')
         days = request.POST.get('days')
         style = request.POST.get('style')
@@ -57,8 +59,7 @@ def home(request):
         weather = get_weather(dest)
         
         multi_agent_prompt = f"""
-        Act as an Expert Travel Editor. Create a {days}-day itinerary to {dest} for {pers} people on a {style} budget.
-        
+        Act as an Expert Travel Editor. Create a {days}-day itinerary from {source} to {dest} starting on {start_date} for {pers} people on a {style} budget.        
         STRICT FORMATTING RULES - IF YOU FAIL THESE, THE SYSTEM CRASHES:
         1. HEADINGS: Use EXACTLY **Day 1: [Name]**. No other bolding.
         2. POINTS: Use bullet points (-). Always include commute mode/cost.

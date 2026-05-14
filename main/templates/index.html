@@ -4,21 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YatraGen Pro - AI Travel Planner</title>
-    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
     <style>
-        /* Smooth Dark Mode Transition */
-        body { transition: background-color 0.3s ease, color 0.3s ease; }
-        
-        /* WhatsApp Button Custom Colors */
+        body { transition: background-color 0.3s ease, color 0.3s ease; display: flex; flex-direction: column; min-height: 100vh; }
         .btn-whatsapp { background-color: #25D366; color: white; border: none; }
         .btn-whatsapp:hover { background-color: #128C7E; color: white; }
-        
-        /* General Styling */
         .hero-section { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 0; border-radius: 0 0 20px 20px; margin-bottom: 30px; }
         .itinerary-content { font-size: 1.05rem; line-height: 1.6; }
-        
-        /* Hide UI elements during print */
+        .main-content { flex: 1; }
         @media print {
             .no-print { display: none !important; }
             body { background-color: white !important; color: black !important; }
@@ -28,13 +24,11 @@
 </head>
 <body>
 
-    <!-- NAVBAR WITH DARK MODE TOGGLE -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark no-print py-3 shadow-sm">
         <div class="container">
             <a class="navbar-brand fw-bold" href="/">🌍 YatraGen Pro</a>
             <div class="ms-auto d-flex align-items-center">
                 
-                <!-- DARK MODE BUTTON -->
                 <button class="btn btn-outline-warning btn-sm me-3 fw-bold" id="themeToggle" onclick="toggleDarkMode()">🌙 Dark Mode</button>
                 
                 {% if user.is_authenticated %}
@@ -51,111 +45,119 @@
         </div>
     </nav>
 
-    <!-- HERO & FORM SECTION -->
-    <div class="container no-print">
-        <div class="hero-section text-center shadow-sm">
-            <h1 class="fw-bold display-5">Plan Your Perfect Trip with AI</h1>
-            <p class="lead">Instant itineraries tailored to your budget and style.</p>
-        </div>
+    <div class="main-content">
+        <div class="container no-print">
+            <div class="hero-section text-center shadow-sm">
+                <h1 class="fw-bold display-5">Plan Your Perfect Trip with AI</h1>
+                <p class="lead">Instant itineraries tailored to your budget and style.</p>
+            </div>
 
-        <div class="card shadow-sm mb-5 border-0">
-            <div class="card-body p-4">
-                <form method="POST" id="plannerForm">
-                    {% csrf_token %}
-                    <div class="row g-3">
-                        <div class="col-md-3">
-                            <label class="form-label fw-bold">Destination</label>
-                            <input type="text" name="destination" class="form-control" placeholder="e.g., Manali, Goa" required>
+            <div class="card shadow-sm mb-5 border-0">
+                <div class="card-body p-4">
+                    <form method="POST" id="plannerForm">
+                        {% csrf_token %}
+                        
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Starting Place</label>
+                                <input type="text" name="source" class="form-control" placeholder="e.g., Delhi, Mumbai" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Start Date</label>
+                                <input type="date" name="start_date" class="form-control" required>
+                            </div>
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label fw-bold">Duration (Days)</label>
-                            <input type="number" name="days" class="form-control" min="1" max="14" value="3" required>
+
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Destination</label>
+                                <input type="text" name="destination" class="form-control" placeholder="e.g., Manali, Goa" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Duration (Days)</label>
+                                <input type="number" name="days" class="form-control" min="1" max="14" value="3" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Budget Style</label>
+                                <select name="style" class="form-select">
+                                    <option value="Backpacker (Low Budget)">Backpacker</option>
+                                    <option value="Moderate (Mid-Range)" selected>Moderate</option>
+                                    <option value="Luxury (High Budget)">Luxury</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Persons</label>
+                                <input type="number" name="persons" class="form-control" min="1" max="20" value="2" required>
+                            </div>
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label fw-bold">Budget Style</label>
-                            <select name="style" class="form-select">
-                                <option value="Backpacker (Low Budget)">Backpacker</option>
-                                <option value="Moderate (Mid-Range)" selected>Moderate</option>
-                                <option value="Luxury (High Budget)">Luxury</option>
-                            </select>
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg fw-bold px-5" id="generateBtn" onclick="showLoader()">
+                                🚀 Generate Itinerary
+                            </button>
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label fw-bold">Persons</label>
-                            <input type="number" name="persons" class="form-control" min="1" max="20" value="2" required>
-                        </div>
+                    </form>
+                    <div class="text-center mt-4 d-none" id="loader">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2 fw-bold text-muted">AI is crafting your perfect trip...</p>
                     </div>
-                    <div class="text-center mt-4">
-                        <button type="submit" class="btn btn-primary btn-lg fw-bold px-5" id="generateBtn" onclick="showLoader()">
-                            🚀 Generate Itinerary
-                        </button>
-                    </div>
-                </form>
-                <!-- Loading Spinner -->
-                <div class="text-center mt-4 d-none" id="loader">
-                    <div class="spinner-border text-primary" role="status"></div>
-                    <p class="mt-2 fw-bold text-muted">AI is crafting your perfect trip...</p>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- RESULT SECTION -->
-    {% if itinerary %}
-    <div class="container mb-5">
-        <div class="d-flex justify-content-between align-items-center mb-3 no-print">
-            <h3 class="fw-bold m-0">Your Travel Dossier</h3>
-            <div>
-                <!-- WHATSAPP SHARE BUTTON -->
-                <button onclick="shareOnWhatsApp()" class="btn btn-whatsapp btn-sm fw-bold me-2">💚 WhatsApp</button>
-                <button onclick="window.print()" class="btn btn-dark btn-sm fw-bold">📄 PDF</button>
+        {% if itinerary %}
+        <div class="container mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-3 no-print">
+                <h3 class="fw-bold m-0">Your Travel Dossier</h3>
+                <div>
+                    <button onclick="shareOnWhatsApp()" class="btn btn-whatsapp btn-sm fw-bold me-2">💚 WhatsApp</button>
+                    <button onclick="downloadPDF()" class="btn btn-dark btn-sm fw-bold">📄 Download PDF</button>
+                </div>
             </div>
-        </div>
-        
-        <!-- Weather Info -->
-        {% if weather != "N/A" %}
-        <div class="alert alert-info py-2 fw-bold no-print">
-            🌤️ Current Weather at Destination: {{ weather }}
+            
+            {% if weather != "N/A" %}
+            <div class="alert alert-info py-2 fw-bold no-print">
+                🌤️ Current Weather at Destination: {{ weather }}
+            </div>
+            {% endif %}
+            
+            <div id="itinerary-display" class="p-4 border rounded shadow-sm itinerary-content mb-4" style="background-color: var(--bs-body-bg);">
+                <input type="hidden" id="current_plan_data" value="{{ itinerary }}">
+                <div id="itinerary-html">
+                    {{ itinerary|safe }}
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-primary no-print">
+                <div class="card-header bg-primary text-white fw-bold">
+                    🛠️ Refine this Plan with AI Editor
+                </div>
+                <div class="card-body">
+                    <div class="input-group">
+                        <input type="text" id="chatInput" class="form-control" placeholder="e.g. Make it under ₹15000, add a waterpark on Day 2...">
+                        <button class="btn btn-primary fw-bold" id="chatBtn" onclick="refinePlan()">Update Plan</button>
+                    </div>
+                    <div id="chatLoader" class="d-none mt-2 text-primary fw-bold small">
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Updating itinerary...
+                    </div>
+                </div>
+            </div>
         </div>
         {% endif %}
-        
-        <!-- Itinerary Output -->
-        <div id="itinerary-display" class="p-4 border rounded shadow-sm itinerary-content mb-4" style="background-color: var(--bs-body-bg);">
-            <!-- Hidden input to store raw markdown for chatbox -->
-            <input type="hidden" id="current_plan_data" value="{{ itinerary }}">
-            
-            <div id="itinerary-html">
-                {{ itinerary|safe }}
-            </div>
-        </div>
-
-        <!-- AI CHATBOX FOR REFINEMENT -->
-        <div class="card shadow-sm border-primary no-print">
-            <div class="card-header bg-primary text-white fw-bold">
-                🛠️ Refine this Plan with AI Editor
-            </div>
-            <div class="card-body">
-                <div class="input-group">
-                    <input type="text" id="chatInput" class="form-control" placeholder="e.g. Make it under ₹15000, add a waterpark on Day 2...">
-                    <button class="btn btn-primary fw-bold" id="chatBtn" onclick="refinePlan()">Update Plan</button>
-                </div>
-                <div id="chatLoader" class="d-none mt-2 text-primary fw-bold small">
-                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Updating itinerary...
-                </div>
-            </div>
-        </div>
     </div>
-    {% endif %}
 
-    <!-- SCRIPTS -->
+    <footer class="bg-dark text-white text-center py-3 mt-auto no-print">
+        <div class="container">
+            <p class="mb-0 fw-bold">✨ Designed & Developed by Mudit Singh ✨</p>
+        </div>
+    </footer>
+
     <script>
-        // 1. Loader for Main Form
         function showLoader() {
             document.getElementById('generateBtn').classList.add('disabled');
             document.getElementById('generateBtn').innerText = 'Generating...';
             document.getElementById('loader').classList.remove('d-none');
         }
 
-        // 2. DARK MODE LOGIC
         function toggleDarkMode() {
             const html = document.documentElement;
             const btn = document.getElementById('themeToggle');
@@ -170,29 +172,54 @@
             }
         }
 
-        // Check theme on page load
         window.onload = () => {
             const savedTheme = localStorage.getItem('theme') || 'light';
             document.documentElement.setAttribute('data-bs-theme', savedTheme);
             document.getElementById('themeToggle').innerText = savedTheme === 'dark' ? "☀️ Light Mode" : "🌙 Dark Mode";
         };
 
-        // 3. WHATSAPP SHARE LOGIC
         function shareOnWhatsApp() {
-            // Get text from the rendered itinerary
             const textToShare = document.getElementById('itinerary-html').innerText;
             const encodedText = encodeURIComponent("🌍 *My Travel Plan from YatraGen Pro*\n\n" + textToShare);
             window.open(`https://api.whatsapp.com/send?text=${encodedText}`, '_blank');
         }
 
-        // 4. AJAX LOGIC FOR CHATBOX REFINEMENT
+        // REAL PDF GENERATION LOGIC WITH HD CLARITY (Scale 4)
+        // FIXED PDF DOWNLOAD LOGIC
+        function downloadPDF() {
+            const element = document.getElementById('itinerary-display');
+    
+    // PDF banane se pehle background pakka safed set kar rahe hain
+            const originalBg = element.style.backgroundColor;
+            const originalColor = element.style.color;
+            element.style.backgroundColor = "#ffffff";
+            element.style.color = "#000000";
+
+            const opt = {
+                margin:       0.5,
+                filename:     'YatraGen_Plan.pdf',
+                image:        { type: 'jpeg', quality: 1.0 },
+        // scrollY: 0 sabse zaroori hai cut-off rokne ke liye
+                html2canvas:  { scale: 2, useCORS: true, scrollY: 0 }, 
+                jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' },
+        // pagebreak avoid-all karega ki koi bhi line 2 page ke beech mein na kate
+                pagebreak:    { mode: 'avoid-all' } 
+            };
+
+            html2pdf().set(opt).from(element).save().then(() => {
+        // PDF bante hi wapas original colors
+                element.style.backgroundColor = originalBg;
+                element.style.color = originalColor;
+            }).catch(err => {
+                console.error('Error generating PDF:', err);
+            });
+        }
         function refinePlan() {
             const userRequest = document.getElementById('chatInput').value;
             const currentPlan = document.getElementById('current_plan_data').value;
             
             if (!userRequest.trim()) return;
 
-            // Show loader, disable button
             document.getElementById('chatLoader').classList.remove('d-none');
             document.getElementById('chatBtn').disabled = true;
 
@@ -200,7 +227,6 @@
             formData.append('user_request', userRequest);
             formData.append('current_plan', currentPlan);
             
-            // Need CSRF token for Django AJAX
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
             fetch('/refine_itinerary/', {
@@ -213,9 +239,7 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Update the visible HTML
                     document.getElementById('itinerary-html').innerHTML = data.updated_html;
-                    // Update the hidden data so subsequent chats use the new plan
                     document.getElementById('current_plan_data').value = data.updated_html;
                     document.getElementById('chatInput').value = '';
                 } else {
@@ -226,7 +250,6 @@
                 alert('Network Error. Please try again.');
             })
             .finally(() => {
-                // Hide loader, enable button
                 document.getElementById('chatLoader').classList.add('d-none');
                 document.getElementById('chatBtn').disabled = false;
             });
